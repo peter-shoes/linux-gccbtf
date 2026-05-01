@@ -31,6 +31,11 @@ usage()
 	exit 1
 }
 
+is_enabled() {
+	grep -q "^$1=y" include/config/auto.conf
+}
+
+
 BTF_BASE=""
 
 while [ $# -gt 0 ]; do
@@ -76,6 +81,19 @@ gen_btf_data()
 
 	${RESOLVE_BTFIDS} ${RESOLVE_BTFIDS_FLAGS}	\
 		${BTF_BASE:+--btf_base ${BTF_BASE}}	\
+		--btf ${btf1} "${ELF_FILE}"
+}
+
+read_btf_data()
+{
+	btf1="${ELF_FILE}.BTF.1"
+	${PAHOLE} -J ${PAHOLE_LIBCTF_FLAGS} ${PAHOLE_FLAGS}	\
+		${BTF_BASE:+--btf_base ${BTF_BASE}}		\
+		--btf_encode_detached=${btf1}			\
+		"${ELF_FILE}"
+
+	${RESOLVE_BTFIDS} ${RESOLVE_BTFIDS_FLAGS}		\
+		${BTF_BASE:+--btf_base ${BTF_BASE}}		\
 		--btf ${btf1} "${ELF_FILE}"
 }
 
@@ -133,7 +151,12 @@ if [ -n "${BTF_BASE}" ]; then
 	BTFGEN_MODE="module"
 fi
 
-gen_btf_data
+if is_enabled CONFIG_HAVE_BTF_TOOLCHAIN; then
+	read_btf_data
+else
+	gen_btf_data
+fi
+
 
 case "${BTFGEN_MODE}" in
 vmlinux)

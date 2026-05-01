@@ -91,11 +91,13 @@ vmlinux_link()
 	fi
 
 	# If we have BTF in a separate file, get it from there, and only there.
-	if [[ -n $btf_vmlinux_bin_o ]]; then
+	if [ -n "$btf_vmlinux_bin_o" ]; then
+		info STRIP "$btf_vmlinux_bin_o"
 		sed 's,KEEP(\*(\.BTF)),KEEP('"${btf_vmlinux_bin_o}"'(.BTF)),g;' \
 		< ${objtree}/${KBUILD_LDS} > ${objtree}/${KBUILD_LDS}.separate-btf
 		ldflags="${ldflags} ${wl}--script=${objtree}/${KBUILD_LDS}.separate-btf"
 	else
+		info LINK "First link"
 		ldflags="${ldflags} ${wl}--script=${objtree}/${KBUILD_LDS}"
 	fi
 
