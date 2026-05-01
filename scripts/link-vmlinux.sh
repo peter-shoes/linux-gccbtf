@@ -49,6 +49,7 @@ info()
 vmlinux_link()
 {
 	local output=${1}
+	local no_vmlinux_btf=${2:-}
 	local objs
 	local libs
 	local ld
@@ -89,7 +90,14 @@ vmlinux_link()
 		ldlibs=
 	fi
 
-	ldflags="${ldflags} ${wl}--script=${objtree}/${KBUILD_LDS}"
+	# If we have BTF in a separate file, get it from there, and only there.
+	if [[ -n $btf_vmlinux_bin_o ]]; then
+		sed 's,KEEP(\*(\.BTF)),KEEP('"${btf_vmlinux_bin_o}"'(.BTF)),g;' \
+		< ${objtree}/${KBUILD_LDS} > ${objtree}/${KBUILD_LDS}.separate-btf
+		ldflags="${ldflags} ${wl}--script=${objtree}/${KBUILD_LDS}.separate-btf"
+	else
+		ldflags="${ldflags} ${wl}--script=${objtree}/${KBUILD_LDS}"
+	fi
 
 	# The kallsyms linking does not need debug symbols included.
 	if [ -n "${strip_debug}" ] ; then
@@ -104,6 +112,8 @@ vmlinux_link()
 		${wl}--whole-archive ${objs} ${wl}--no-whole-archive	\
 		${wl}--start-group ${libs} ${wl}--end-group		\
 		${kallsymso} ${btf_vmlinux_bin_o} ${arch_vmlinux_o} ${ldlibs}
+
+	rm -f "${objtree}/${KBUILD_LDS}.separate-btf"
 }
 
 # Create ${2}.o file with all symbols from the ${1} object file
@@ -174,6 +184,8 @@ if [ "$1" = "clean" ]; then
 fi
 
 ${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init init/version-timestamp.o
+#objcopy --remove-section=.BTF init/version-timestamp.o init/version-timestamp.o.tmp && \
+#    mv init/version-timestamp.o.tmp init/version-timestamp.o
 
 arch_vmlinux_o=
 if is_enabled CONFIG_ARCH_WANTS_PRE_LINK_VMLINUX; then

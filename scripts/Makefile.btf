@@ -30,3 +30,9 @@ resolve-btfids-flags-$(if $(KBUILD_EXTMOD),y) += --distill_base
 resolve-btfids-flags-$(if $(KBUILD_VERBOSE),y) += --verbose
 
 export RESOLVE_BTFIDS_FLAGS := $(resolve-btfids-flags-y)
+
+ifneq ($(CONFIG_HAVE_BTF_TOOLCHAIN),)
+KBUILD_CFLAGS	+= $(call cc-option,-gbtf)
+# we are always combining with the regular pahole flags.
+export PAHOLE_LIBCTF_FLAGS := -F libctf
+endif

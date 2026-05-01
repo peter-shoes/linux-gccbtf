@@ -751,6 +751,8 @@ static const char *const section_white_list[] =
 	".note*",
 	".got*",
 	".toc*",
+	".BTF",
+	".ctf",
 	".xt.prop",				 /* xtensa */
 	".xt.lit",         /* xtensa */
 	".arcextmap*",			/* arc */
